@@ -6,6 +6,7 @@ Menunjukkan seluruh alur dari Alice ke Bob dalam satu proses (simulasi lokal).
 
 import time
 import json
+import ipaddress
 from key_manager import setup_all_keys
 from alice import Alice
 from bob import Bob
@@ -21,9 +22,28 @@ def print_section(title: str):
     print(SEPARATOR)
 
 
-def run_demo(plaintext: str = None, alice_ip: str = "127.0.0.1", bob_ip: str = "127.0.0.1", port: int = 9999):
+def validate_endpoints(alice_ip: str, alice_port: int, bob_ip: str, bob_port: int):
+    ipaddress.ip_address(alice_ip)
+    ipaddress.ip_address(bob_ip)
+    if not (1 <= alice_port <= 65535 and 1 <= bob_port <= 65535):
+        raise ValueError("Port harus di antara 1-65535.")
+    if alice_ip == bob_ip:
+        raise ValueError("IP Alice dan IP Bob harus berbeda.")
+    if alice_port == bob_port:
+        raise ValueError("Port Alice dan Port Bob harus berbeda.")
+
+
+def run_demo(
+    plaintext: str = None,
+    alice_ip: str = "127.0.0.2",
+    bob_ip: str = "127.0.0.1",
+    alice_port: int = 9998,
+    bob_port: int = 9999,
+):
     if plaintext is None:
         plaintext = "Bob, transfer dana penelitian sebesar 10 juta ke rekening Lab Keamanan."
+
+    validate_endpoints(alice_ip, alice_port, bob_ip, bob_port)
 
     print_section("SETUP: Generate / Load RSA Keys")
     keys = setup_all_keys()
@@ -45,8 +65,8 @@ def run_demo(plaintext: str = None, alice_ip: str = "127.0.0.1", bob_ip: str = "
     bob_receiver = Bob(
         private_key=keys["bob_private"],
         alice_public_key=keys["alice_public"],
-        listen_ip="0.0.0.0",
-        port=port,
+        listen_ip=bob_ip,
+        port=bob_port,
     )
 
     # ─── Bob mulai mendengarkan ───
@@ -64,7 +84,7 @@ def run_demo(plaintext: str = None, alice_ip: str = "127.0.0.1", bob_ip: str = "
     print(payload_str)
 
     print_section("ALICE: Mengirim Payload ke Bob")
-    success = alice.send_payload(payload, port=port)
+    success = alice.send_payload(payload, bob_port=bob_port, alice_port=alice_port)
     if not success:
         print("  ✗ Gagal mengirim payload!")
         bob_receiver.stop_listening()
@@ -100,14 +120,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Demo End-to-End Secure Message Delivery")
     parser.add_argument("--message", "-m", type=str, default=None,
                         help="Pesan plaintext yang akan dikirim")
-    parser.add_argument("--alice-ip", type=str, default="127.0.0.1")
+    parser.add_argument("--alice-ip", type=str, default="127.0.0.2")
     parser.add_argument("--bob-ip", type=str, default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=9999)
+    parser.add_argument("--alice-port", type=int, default=9998)
+    parser.add_argument("--bob-port", type=int, default=9999)
     args = parser.parse_args()
 
     run_demo(
         plaintext=args.message,
         alice_ip=args.alice_ip,
         bob_ip=args.bob_ip,
-        port=args.port,
+        alice_port=args.alice_port,
+        bob_port=args.bob_port,
     )

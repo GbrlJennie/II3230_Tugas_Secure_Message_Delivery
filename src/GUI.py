@@ -11,6 +11,7 @@ import time
 import threading
 import json
 import base64
+import ipaddress
 import tkinter as tk
 from tkinter import ttk, scrolledtext, font as tkfont, messagebox
 
@@ -58,7 +59,8 @@ FONTS = {
     "badge":   ("Consolas", 8, "bold"),
 }
 
-DEFAULT_PORT = 9999
+DEFAULT_ALICE_PORT = 9998
+DEFAULT_BOB_PORT = 9999
 DEFAULT_PLAINTEXT = "Bob, transfer dana penelitian sebesar 10 juta ke rekening Lab Keamanan ITB."
 
 
@@ -208,12 +210,14 @@ class AlicePanel(tk.Frame):
             e.pack(fill="x")
             return e
 
-        self.alice_ip_var = tk.StringVar(value="127.0.0.1")
+        self.alice_ip_var = tk.StringVar(value="127.0.0.2")
         self.bob_ip_var   = tk.StringVar(value="127.0.0.1")
-        self.port_var     = tk.StringVar(value=str(DEFAULT_PORT))
+        self.alice_port_var = tk.StringVar(value=str(DEFAULT_ALICE_PORT))
+        self.bob_port_var = tk.StringVar(value=str(DEFAULT_BOB_PORT))
         _field(cfg_row, "IP Alice (sumber)",   self.alice_ip_var)
         _field(cfg_row, "IP Bob (tujuan)",     self.bob_ip_var)
-        _field(cfg_row, "Port", self.port_var, w=7)
+        _field(cfg_row, "Port Alice (sumber)", self.alice_port_var, w=7)
+        _field(cfg_row, "Port Bob (tujuan)", self.bob_port_var, w=7)
 
         # ── Action buttons ───────────────────────────────────────────────
         btn_row = styled_frame(body)
@@ -283,6 +287,18 @@ class AlicePanel(tk.Frame):
         if not plaintext:
             messagebox.showwarning("Input Kosong", "Masukkan pesan plaintext terlebih dahulu.")
             return
+
+        try:
+            self.app.validate_endpoints(
+                self.alice_ip_var.get(),
+                int(self.alice_port_var.get()),
+                self.bob_ip_var.get(),
+                int(self.bob_port_var.get()),
+            )
+        except Exception as e:
+            messagebox.showerror("Endpoint Tidak Valid", str(e))
+            return
+
         self.log.line("━━━ ALICE: Menyiapkan Pesan ━━━", "accent")
         self.log.kv("Plaintext", plaintext, "key", "hi")
 
@@ -300,15 +316,28 @@ class AlicePanel(tk.Frame):
         if not self._payload_data:
             messagebox.showwarning("Belum Siap", "Siapkan pesan terlebih dahulu.")
             return
-        port = int(self.port_var.get())
+
+        try:
+            alice_port = int(self.alice_port_var.get())
+            bob_port = int(self.bob_port_var.get())
+            self.app.validate_endpoints(
+                self.alice_ip_var.get(),
+                alice_port,
+                self.bob_ip_var.get(),
+                bob_port,
+            )
+        except Exception as e:
+            messagebox.showerror("Endpoint Tidak Valid", str(e))
+            return
+
         self.log.line("━━━ ALICE: Mengirim Payload ━━━", "accent")
 
         def run():
             alice = self.app.get_alice(
                 self.alice_ip_var.get(), self.bob_ip_var.get()
             )
-            ok = alice.send_payload(self._payload_data, port=port)
-            msg = f"Payload {'berhasil' if ok else 'GAGAL'} dikirim ke {self.bob_ip_var.get()}:{port}"
+            ok = alice.send_payload(self._payload_data, bob_port=bob_port, alice_port=alice_port)
+            msg = f"Payload {'berhasil' if ok else 'GAGAL'} dikirim ke {self.bob_ip_var.get()}:{bob_port}"
             tag = "ok" if ok else "err"
             self.app.root.after(0, lambda: self.log.line(f"  {'✓' if ok else '✗'} {msg}", tag))
 
@@ -320,7 +349,20 @@ class AlicePanel(tk.Frame):
         if not plaintext:
             messagebox.showwarning("Input Kosong", "Masukkan pesan plaintext terlebih dahulu.")
             return
-        port = int(self.port_var.get())
+
+        try:
+            alice_port = int(self.alice_port_var.get())
+            bob_port = int(self.bob_port_var.get())
+            self.app.validate_endpoints(
+                self.alice_ip_var.get(),
+                alice_port,
+                self.bob_ip_var.get(),
+                bob_port,
+            )
+        except Exception as e:
+            messagebox.showerror("Endpoint Tidak Valid", str(e))
+            return
+
         self.log.line("━━━ ALICE: Siapkan & Kirim ━━━", "accent")
 
         def run():
@@ -331,7 +373,7 @@ class AlicePanel(tk.Frame):
             self._payload_data = payload
             self.app.root.after(0, lambda: self._display_alice_log(alice.log, payload))
             time.sleep(0.1)
-            ok = alice.send_payload(payload, port=port)
+            ok = alice.send_payload(payload, bob_port=bob_port, alice_port=alice_port)
             msg = f"Payload {'berhasil' if ok else 'GAGAL'} dikirim"
             tag = "ok" if ok else "err"
             self.app.root.after(0, lambda: self.log.line(f"  {'✓' if ok else '✗'} {msg}", tag))
@@ -417,20 +459,34 @@ class BobPanel(tk.Frame):
         label(cfg_row, "Listen IP:", font=FONTS["ui_sm"],
               fg=THEME["text_dim"]).pack(side="left", padx=(0, 4))
         self.listen_ip_var = tk.StringVar(value="0.0.0.0")
-        tk.Entry(cfg_row, textvariable=self.listen_ip_var, width=14,
-                 font=FONTS["mono_sm"], fg=THEME["text"], bg="#0a0e14",
-                 insertbackground=self.accent, relief="flat",
-                 highlightthickness=1, highlightbackground=THEME["border"]
-                 ).pack(side="left", padx=(0, 12))
+        tk.Entry(
+            cfg_row,
+            textvariable=self.listen_ip_var,
+            width=14,
+            font=FONTS["mono_sm"],
+            fg=THEME["text"],
+            bg="#0a0e14",
+            insertbackground=self.accent,
+            relief="flat",
+            highlightthickness=1,
+            highlightbackground=THEME["border"],
+        ).pack(side="left", padx=(0, 12))
 
         label(cfg_row, "Port:", font=FONTS["ui_sm"],
               fg=THEME["text_dim"]).pack(side="left", padx=(0, 4))
-        self.port_var = tk.StringVar(value=str(DEFAULT_PORT))
-        tk.Entry(cfg_row, textvariable=self.port_var, width=7,
-                 font=FONTS["mono_sm"], fg=THEME["text"], bg="#0a0e14",
-                 insertbackground=self.accent, relief="flat",
-                 highlightthickness=1, highlightbackground=THEME["border"]
-                 ).pack(side="left")
+        self.port_var = tk.StringVar(value=str(DEFAULT_BOB_PORT))
+        tk.Entry(
+            cfg_row,
+            textvariable=self.port_var,
+            width=7,
+            font=FONTS["mono_sm"],
+            fg=THEME["text"],
+            bg="#0a0e14",
+            insertbackground=self.accent,
+            relief="flat",
+            highlightthickness=1,
+            highlightbackground=THEME["border"],
+        ).pack(side="left")
 
         # ── Buttons ──────────────────────────────────────────────────────
         btn_row = styled_frame(body)
@@ -518,8 +574,16 @@ class BobPanel(tk.Frame):
         )
 
     def _on_start(self):
-        port = int(self.port_var.get())
-        listen_ip = self.listen_ip_var.get()
+        try:
+            port = int(self.port_var.get())
+            listen_ip = self.listen_ip_var.get()
+            alice_ip = self.app.alice_panel.alice_ip_var.get()
+            alice_port = int(self.app.alice_panel.alice_port_var.get())
+            self.app.validate_endpoints(alice_ip, alice_port, listen_ip, port)
+        except Exception as e:
+            messagebox.showerror("Endpoint Tidak Valid", str(e))
+            return
+
         keys = self.app.keys
         if not keys:
             messagebox.showerror("Keys Not Ready", "Kunci belum di-generate.")
@@ -737,6 +801,17 @@ class App:
                 bob_ip=bob_ip,
             )
         return self._alice_cache[key]
+
+    @staticmethod
+    def validate_endpoints(alice_ip: str, alice_port: int, bob_ip: str, bob_port: int):
+        ipaddress.ip_address(alice_ip)
+        ipaddress.ip_address(bob_ip)
+        if not (1 <= alice_port <= 65535 and 1 <= bob_port <= 65535):
+            raise ValueError("Port harus di antara 1-65535.")
+        if alice_ip == bob_ip:
+            raise ValueError("IP Alice dan IP Bob harus berbeda.")
+        if alice_port == bob_port:
+            raise ValueError("Port Alice dan Port Bob harus berbeda.")
 
     def run(self):
         self.root.mainloop()

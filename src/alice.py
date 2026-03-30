@@ -98,26 +98,34 @@ class Alice:
         self._log("Payload siap dikirim.")
         return payload
 
-    def send_payload(self, payload: dict, port: int = 9999) -> bool:
+    def send_payload(self, payload: dict, bob_port: int = 9999, alice_port: int | None = None) -> bool:
         """
         Kirim payload ke Bob melalui socket TCP.
         """
         try:
             payload_json = payload_to_json(payload).encode("utf-8")
-            self._log(f"Menghubungkan ke {self.bob_ip}:{port}...")
+            self._log(f"Menghubungkan ke {self.bob_ip}:{bob_port}...")
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect((self.bob_ip, port))
+                if alice_port is not None:
+                    self._log(f"Bind source endpoint {self.alice_ip}:{alice_port}...")
+                    s.bind((self.alice_ip, alice_port))
+                s.connect((self.bob_ip, bob_port))
                 # Kirim panjang pesan dulu (4 byte), lalu isi
                 length = len(payload_json)
                 s.sendall(length.to_bytes(4, "big") + payload_json)
-            self._log(f"Payload berhasil dikirim ke {self.bob_ip}:{port} ({length} bytes).")
+            self._log(f"Payload berhasil dikirim ke {self.bob_ip}:{bob_port} ({length} bytes).")
             return True
         except Exception as e:
             self._log(f"ERROR saat pengiriman: {e}")
             return False
 
-    def prepare_and_send(self, plaintext: str, port: int = 9999) -> tuple[dict, bool]:
+    def prepare_and_send(
+        self,
+        plaintext: str,
+        bob_port: int = 9999,
+        alice_port: int | None = None,
+    ) -> tuple[dict, bool]:
         """Helper: prepare + send dalam satu langkah."""
         payload = self.prepare_secure_message(plaintext)
-        success = self.send_payload(payload, port)
+        success = self.send_payload(payload, bob_port=bob_port, alice_port=alice_port)
         return payload, success
