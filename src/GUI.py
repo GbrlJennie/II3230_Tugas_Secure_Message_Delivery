@@ -1,10 +1,3 @@
-"""
-GUI.py
-Antarmuka grafis (GUI) untuk End-to-End Secure Message Delivery.
-Menampilkan jendela Alice (pengirim) dan Bob (penerima) secara bersamaan.
-Jalankan: python GUI.py
-"""
-
 import sys
 import os
 import time
@@ -212,12 +205,23 @@ class AlicePanel(tk.Frame):
 
         self.alice_ip_var = tk.StringVar(value="127.0.0.2")
         self.bob_ip_var   = tk.StringVar(value="127.0.0.1")
-        self.alice_port_var = tk.StringVar(value=str(DEFAULT_ALICE_PORT))
         self.bob_port_var = tk.StringVar(value=str(DEFAULT_BOB_PORT))
+        self.alice_port_used_var = tk.StringVar(value="auto")
+
         _field(cfg_row, "IP Alice (sumber)",   self.alice_ip_var)
         _field(cfg_row, "IP Bob (tujuan)",     self.bob_ip_var)
-        _field(cfg_row, "Port Alice (sumber)", self.alice_port_var, w=7)
-        _field(cfg_row, "Port Bob (tujuan)", self.bob_port_var, w=7)
+        _field(cfg_row, "Port Bob (tujuan)",   self.bob_port_var, w=7)
+
+        # label read‑only untuk port yang dipakai Alice
+        f = styled_frame(cfg_row)
+        f.pack(side="left", padx=(0, 12))
+        label(f, "Port Alice (dipakai)", font=FONTS["ui_sm"],
+                fg=THEME["text_dim"]).pack(anchor="w")
+        tk.Label(
+            f, textvariable=self.alice_port_used_var,
+            font=FONTS["mono_sm"], fg=THEME["text"],
+            bg="#0a0e14"
+        ).pack(fill="x")
 
         # ── Action buttons ───────────────────────────────────────────────
         btn_row = styled_frame(body)
@@ -290,10 +294,9 @@ class AlicePanel(tk.Frame):
 
         try:
             self.app.validate_endpoints(
-                self.alice_ip_var.get(),
-                int(self.alice_port_var.get()),
-                self.bob_ip_var.get(),
-                int(self.bob_port_var.get()),
+            self.alice_ip_var.get(),
+            self.bob_ip_var.get(),
+            int(self.bob_port_var.get()),
             )
         except Exception as e:
             messagebox.showerror("Endpoint Tidak Valid", str(e))
@@ -318,11 +321,9 @@ class AlicePanel(tk.Frame):
             return
 
         try:
-            alice_port = int(self.alice_port_var.get())
             bob_port = int(self.bob_port_var.get())
             self.app.validate_endpoints(
                 self.alice_ip_var.get(),
-                alice_port,
                 self.bob_ip_var.get(),
                 bob_port,
             )
@@ -336,7 +337,7 @@ class AlicePanel(tk.Frame):
             alice = self.app.get_alice(
                 self.alice_ip_var.get(), self.bob_ip_var.get()
             )
-            ok = alice.send_payload(self._payload_data, bob_port=bob_port, alice_port=alice_port)
+            ok = alice.send_payload(self._payload_data, bob_port=bob_port)
             msg = f"Payload {'berhasil' if ok else 'GAGAL'} dikirim ke {self.bob_ip_var.get()}:{bob_port}"
             tag = "ok" if ok else "err"
             self.app.root.after(0, lambda: self.log.line(f"  {'✓' if ok else '✗'} {msg}", tag))
@@ -351,11 +352,9 @@ class AlicePanel(tk.Frame):
             return
 
         try:
-            alice_port = int(self.alice_port_var.get())
             bob_port = int(self.bob_port_var.get())
             self.app.validate_endpoints(
                 self.alice_ip_var.get(),
-                alice_port,
                 self.bob_ip_var.get(),
                 bob_port,
             )
@@ -373,7 +372,7 @@ class AlicePanel(tk.Frame):
             self._payload_data = payload
             self.app.root.after(0, lambda: self._display_alice_log(alice.log, payload))
             time.sleep(0.1)
-            ok = alice.send_payload(payload, bob_port=bob_port, alice_port=alice_port)
+            ok = alice.send_payload(payload, bob_port=bob_port)
             msg = f"Payload {'berhasil' if ok else 'GAGAL'} dikirim"
             tag = "ok" if ok else "err"
             self.app.root.after(0, lambda: self.log.line(f"  {'✓' if ok else '✗'} {msg}", tag))
@@ -578,8 +577,7 @@ class BobPanel(tk.Frame):
             port = int(self.port_var.get())
             listen_ip = self.listen_ip_var.get()
             alice_ip = self.app.alice_panel.alice_ip_var.get()
-            alice_port = int(self.app.alice_panel.alice_port_var.get())
-            self.app.validate_endpoints(alice_ip, alice_port, listen_ip, port)
+            self.app.validate_endpoints(alice_ip, listen_ip, port)
         except Exception as e:
             messagebox.showerror("Endpoint Tidak Valid", str(e))
             return
@@ -803,15 +801,13 @@ class App:
         return self._alice_cache[key]
 
     @staticmethod
-    def validate_endpoints(alice_ip: str, alice_port: int, bob_ip: str, bob_port: int):
+    def validate_endpoints(alice_ip: str, bob_ip: str, bob_port: int):
         ipaddress.ip_address(alice_ip)
         ipaddress.ip_address(bob_ip)
-        if not (1 <= alice_port <= 65535 and 1 <= bob_port <= 65535):
-            raise ValueError("Port harus di antara 1-65535.")
+        if not (1 <= bob_port <= 65535):
+            raise ValueError("Port Bob harus di antara 1-65535.")
         if alice_ip == bob_ip:
             raise ValueError("IP Alice dan IP Bob harus berbeda.")
-        if alice_port == bob_port:
-            raise ValueError("Port Alice dan Port Bob harus berbeda.")
 
     def run(self):
         self.root.mainloop()

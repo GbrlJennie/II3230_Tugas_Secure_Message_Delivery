@@ -19,15 +19,12 @@ from crypto_utils import (
 
 
 class Alice:
-    """
-    Representasi pengirim (Alice) dalam skenario secure message delivery.
-    """
-
     def __init__(self, private_key, public_key, bob_public_key,
                  alice_ip: str = "127.0.0.1", bob_ip: str = "127.0.0.1"):
         self.private_key = private_key
         self.public_key = public_key
         self.bob_public_key = bob_public_key
+        self.last_source_port: int | None = None
         self.alice_ip = alice_ip
         self.bob_ip = bob_ip
 
@@ -99,18 +96,14 @@ class Alice:
         return payload
 
     def send_payload(self, payload: dict, bob_port: int = 9999, alice_port: int | None = None) -> bool:
-        """
-        Kirim payload ke Bob melalui socket TCP.
-        """
         try:
             payload_json = payload_to_json(payload).encode("utf-8")
             self._log(f"Menghubungkan ke {self.bob_ip}:{bob_port}...")
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                if alice_port is not None:
-                    self._log(f"Bind source endpoint {self.alice_ip}:{alice_port}...")
-                    s.bind((self.alice_ip, alice_port))
                 s.connect((self.bob_ip, bob_port))
-                # Kirim panjang pesan dulu (4 byte), lalu isi
+                local_ip, local_port = s.getsockname()
+                self.last_source_port = local_port
+                self._log(f"Source port yang dipakai: {local_port}")
                 length = len(payload_json)
                 s.sendall(length.to_bytes(4, "big") + payload_json)
             self._log(f"Payload berhasil dikirim ke {self.bob_ip}:{bob_port} ({length} bytes).")
