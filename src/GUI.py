@@ -8,7 +8,6 @@ import ipaddress
 import tkinter as tk
 from tkinter import ttk, scrolledtext, font as tkfont, messagebox
 
-# ── Tambahkan direktori script ke path ──────────────────────────────────────
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from key_manager import setup_all_keys
@@ -16,10 +15,6 @@ from alice import Alice
 from bob import Bob
 from crypto_utils import payload_to_json
 
-
-# ════════════════════════════════════════════════════════════════════════════
-#  TEMA & WARNA
-# ════════════════════════════════════════════════════════════════════════════
 THEME = {
     "bg":            "#0d1117",      # latar utama (hitam GitHub)
     "panel":         "#161b22",      # panel / card
@@ -55,11 +50,6 @@ FONTS = {
 DEFAULT_ALICE_PORT = 9998
 DEFAULT_BOB_PORT = 9999
 DEFAULT_PLAINTEXT = "Bob, transfer dana penelitian sebesar 10 juta ke rekening Lab Keamanan ITB."
-
-
-# ════════════════════════════════════════════════════════════════════════════
-#  WIDGET HELPERS
-# ════════════════════════════════════════════════════════════════════════════
 
 def styled_frame(parent, bg=None, bd=0, relief="flat", **kw):
     bg = bg or THEME["panel"]
@@ -139,11 +129,6 @@ class ScrolledLog(tk.Frame):
         self.append(f"  {key}: ", key_tag)
         self.line(val, val_tag)
 
-
-# ════════════════════════════════════════════════════════════════════════════
-#  PANEL ALICE
-# ════════════════════════════════════════════════════════════════════════════
-
 class AlicePanel(tk.Frame):
     def __init__(self, parent, app, **kw):
         super().__init__(parent, bg=THEME["panel"], **kw)
@@ -170,7 +155,6 @@ class AlicePanel(tk.Frame):
         body = styled_frame(self)
         body.pack(fill="both", expand=True, padx=12, pady=10)
 
-        # ── Plaintext input ──────────────────────────────────────────────
         label(body, "Pesan Plaintext", font=FONTS["heading"],
               fg=self.accent).pack(anchor="w")
         self.plaintext_var = tk.StringVar(value=DEFAULT_PLAINTEXT)
@@ -186,7 +170,6 @@ class AlicePanel(tk.Frame):
         )
         self.plaintext_entry.pack(fill="x", padx=8, pady=6)
 
-        # ── IP / Port config ─────────────────────────────────────────────
         cfg_row = styled_frame(body)
         cfg_row.pack(fill="x", pady=(0, 10))
 
@@ -212,7 +195,6 @@ class AlicePanel(tk.Frame):
         _field(cfg_row, "IP Bob (tujuan)",     self.bob_ip_var)
         _field(cfg_row, "Port Bob (tujuan)",   self.bob_port_var, w=7)
 
-        # label read‑only untuk port yang dipakai Alice
         f = styled_frame(cfg_row)
         f.pack(side="left", padx=(0, 12))
         label(f, "Port Alice (dipakai)", font=FONTS["ui_sm"],
@@ -223,7 +205,6 @@ class AlicePanel(tk.Frame):
             bg="#0a0e14"
         ).pack(fill="x")
 
-        # ── Action buttons ───────────────────────────────────────────────
         btn_row = styled_frame(body)
         btn_row.pack(fill="x", pady=(0, 10))
 
@@ -239,7 +220,6 @@ class AlicePanel(tk.Frame):
 
         separator(body).pack(fill="x", pady=(0, 8))
 
-        # ── Payload viewer ───────────────────────────────────────────────
         pv_row = styled_frame(body)
         pv_row.pack(fill="x")
         label(pv_row, "Payload JSON", font=FONTS["heading"],
@@ -261,13 +241,11 @@ class AlicePanel(tk.Frame):
             state="disabled",
         )
         self.payload_text.pack(fill="x", pady=(4, 8))
-        # Horizontal scrollbar
         px_sb = ttk.Scrollbar(body, orient="horizontal",
                                command=self.payload_text.xview)
         self.payload_text.configure(xscrollcommand=px_sb.set)
         px_sb.pack(fill="x")
 
-        # ── Log ──────────────────────────────────────────────────────────
         separator(body).pack(fill="x", pady=8)
         label(body, "Log Proses Alice", font=FONTS["heading"],
               fg=self.accent).pack(anchor="w")
@@ -396,10 +374,8 @@ class AlicePanel(tk.Frame):
             else:
                 self.log.line(f"  {entry}", "info")
 
-        # Enable send button
         self.btn_send.config(state="normal")
 
-        # Show payload
         payload_str = payload_to_json(payload)
         self.payload_text.configure(state="normal")
         self.payload_text.delete("1.0", "end")
@@ -415,11 +391,6 @@ class AlicePanel(tk.Frame):
             self.app.root.clipboard_append(content)
             self.btn_copy_payload.config(text="Copied ✓")
             self.app.root.after(2000, lambda: self.btn_copy_payload.config(text="Copy"))
-
-
-# ════════════════════════════════════════════════════════════════════════════
-#  PANEL BOB
-# ════════════════════════════════════════════════════════════════════════════
 
 class BobPanel(tk.Frame):
     def __init__(self, parent, app, **kw):
@@ -451,7 +422,6 @@ class BobPanel(tk.Frame):
         body = styled_frame(self)
         body.pack(fill="both", expand=True, padx=12, pady=10)
 
-        # ── Server config ────────────────────────────────────────────────
         cfg_row = styled_frame(body)
         cfg_row.pack(fill="x", pady=(0, 10))
 
@@ -487,7 +457,6 @@ class BobPanel(tk.Frame):
             highlightbackground=THEME["border"],
         ).pack(side="left")
 
-        # ── Buttons ──────────────────────────────────────────────────────
         btn_row = styled_frame(body)
         btn_row.pack(fill="x", pady=(0, 10))
 
@@ -509,7 +478,6 @@ class BobPanel(tk.Frame):
 
         separator(body).pack(fill="x", pady=(0, 8))
 
-        # ── Hasil verifikasi ─────────────────────────────────────────────
         label(body, "Hasil Verifikasi", font=FONTS["heading"],
               fg=self.accent).pack(anchor="w")
 
@@ -528,7 +496,6 @@ class BobPanel(tk.Frame):
         self._make_result_row("Hash Match",         "hash_match_val")
         self._make_result_row("Signature Valid",    "sig_val")
 
-        # Verdict
         verdict_frame = styled_frame(body, bg="#0a0e14",
                                      highlightthickness=1,
                                      highlightbackground=THEME["border"])
@@ -543,7 +510,6 @@ class BobPanel(tk.Frame):
 
         separator(body).pack(fill="x", pady=(0, 8))
 
-        # ── Log ──────────────────────────────────────────────────────────
         label(body, "Log Proses Bob", font=FONTS["heading"],
               fg=self.accent).pack(anchor="w")
         self.log = ScrolledLog(body, self.accent, height=160)
@@ -647,7 +613,6 @@ class BobPanel(tk.Frame):
             else:
                 self.log.line(f"  {entry}", "info")
 
-        # Update result fields
         def _set(widget, text, ok=None):
             fg = THEME["text"]
             if ok is True:
@@ -668,7 +633,6 @@ class BobPanel(tk.Frame):
              "✓ VALID — Pengirim terverifikasi (Alice)" if result.signature_valid else "✗ INVALID — Pengirim tidak dikenal",
              ok=result.signature_valid)
 
-        # Verdict
         if result.success:
             self.verdict_lbl.config(
                 text="✓  PESAN SAH  —  Dekripsi berhasil · Integritas terjaga · Pengirim Alice terverifikasi",
@@ -679,11 +643,6 @@ class BobPanel(tk.Frame):
                 text="✗  PESAN TIDAK SAH  —  Gagal verifikasi",
                 fg=THEME["tag_err"]
             )
-
-
-# ════════════════════════════════════════════════════════════════════════════
-#  MAIN APP
-# ════════════════════════════════════════════════════════════════════════════
 
 class App:
     def __init__(self):
@@ -812,8 +771,6 @@ class App:
     def run(self):
         self.root.mainloop()
 
-
-# ════════════════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
     app = App()
     app.run()
