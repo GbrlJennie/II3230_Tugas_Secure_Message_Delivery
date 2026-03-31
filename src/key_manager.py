@@ -1,7 +1,4 @@
-"""
-key_manager.py
-Modul manajemen kunci RSA: generate, simpan, dan muat dari file.
-"""
+
 
 import os
 from pathlib import Path
@@ -21,10 +18,6 @@ def ensure_keys_dir():
 
 
 def generate_and_save_keys(identity: str):
-    """
-    Generate RSA keypair untuk identity (alice / bob) dan simpan ke folder keys/.
-    Returns: (private_key_obj, public_key_obj)
-    """
     ensure_keys_dir()
     private_key, public_key = generate_rsa_keypair()
 
@@ -39,10 +32,6 @@ def generate_and_save_keys(identity: str):
 
 
 def load_keys(identity: str):
-    """
-    Muat RSA keypair dari file untuk identity.
-    Returns: (private_key_obj, public_key_obj)
-    """
     priv_path = KEYS_DIR / f"{identity}_private.pem"
     pub_path = KEYS_DIR / f"{identity}_public.pem"
 
@@ -55,7 +44,6 @@ def load_keys(identity: str):
 
 
 def load_public_key_only(identity: str):
-    """Muat hanya public key dari file."""
     pub_path = KEYS_DIR / f"{identity}_public.pem"
     if not pub_path.exists():
         raise FileNotFoundError(f"Public key not found for '{identity}'.")
@@ -69,11 +57,6 @@ def keys_exist(identity: str) -> bool:
 
 
 def setup_all_keys(force: bool = False):
-    """
-    Setup kunci untuk Alice dan Bob.
-    Jika sudah ada dan force=False, kunci lama digunakan.
-    Returns: dict dengan semua key objects.
-    """
     for identity in ["alice", "bob"]:
         if force or not keys_exist(identity):
             print(f"[KeyManager] Generating keys for {identity}...")

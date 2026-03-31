@@ -1,8 +1,3 @@
-"""
-demo.py
-Demo CLI lengkap End-to-End Secure Message Delivery.
-Menunjukkan seluruh alur dari Alice ke Bob dalam satu proses (simulasi lokal).
-"""
 
 import time
 import json
@@ -48,7 +43,6 @@ def run_demo(
     print_section("SETUP: Generate / Load RSA Keys")
     keys = setup_all_keys()
 
-    # ─── Inisialisasi Alice & Bob ───
     alice = Alice(
         private_key=keys["alice_private"],
         public_key=keys["alice_public"],
@@ -69,12 +63,11 @@ def run_demo(
         port=bob_port,
     )
 
-    # ─── Bob mulai mendengarkan ───
+
     print_section("BOB: Mulai Mendengarkan")
     bob_receiver.start_listening(callback=on_received)
-    time.sleep(0.3)  # beri waktu server socket bind
+    time.sleep(0.3)
 
-    # ─── Alice menyiapkan dan mengirim pesan ───
     print_section("ALICE: Menyiapkan Pesan")
     print(f"  Plaintext: {plaintext}")
     payload = alice.prepare_secure_message(plaintext)
@@ -90,10 +83,9 @@ def run_demo(
         bob_receiver.stop_listening()
         return
 
-    # Tunggu Bob memproses
+
     time.sleep(0.5)
 
-    # ─── Tampilkan hasil verifikasi Bob ───
     print_section("BOB: Hasil Verifikasi")
     if received_results:
         result = received_results[0]
