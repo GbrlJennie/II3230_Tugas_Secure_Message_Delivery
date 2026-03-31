@@ -88,7 +88,6 @@ python GUI.py
   "signature_algorithm": "RSA-PSS"
 }
 ```
-
 ---
 
 ## Algoritma yang Digunakan
@@ -106,7 +105,15 @@ python GUI.py
 ## Topologi
 
 ```
-Alice (127.0.0.1) ──── TCP Socket ────► Bob (127.0.0.1:9999)
+Alice (127.0.0.2) ──── TCP Socket ────► Bob (127.0.0.1:9999)
 ```
 
 Untuk dua perangkat berbeda, ganti IP sesuai jaringan lokal.
+
+---
+## Kontributor
+| Nama | NIM |
+|---|---|
+| Naila Selvira Budiana | 18223018 |
+| Gabriela Jennifer Sandy | 18223092 |
+
