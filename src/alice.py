@@ -1,8 +1,3 @@
-"""
-alice.py
-Modul sisi pengirim (Alice) untuk End-to-End Secure Message Delivery.
-"""
-
 import json
 import socket
 from crypto_utils import (
@@ -16,7 +11,6 @@ from crypto_utils import (
     serialize_public_key,
     serialize_private_key,
 )
-
 
 class Alice:
     def __init__(self, private_key, public_key, bob_public_key,
@@ -39,16 +33,6 @@ class Alice:
         print(f"[Alice] {msg}")
 
     def prepare_secure_message(self, plaintext: str) -> dict:
-        """
-        Lakukan seluruh proses sisi Alice:
-        1. Generate AES key
-        2. Encrypt plaintext (AES-256-CBC)
-        3. Encrypt AES key dengan public key Bob (RSA-OAEP)
-        4. Hash plaintext (SHA-256)
-        5. Sign hash dengan private key Alice (RSA-PSS)
-        6. Build payload
-        Mengembalikan payload dict.
-        """
         self.log.clear()
         plaintext_bytes = plaintext.encode("utf-8")
 
@@ -118,7 +102,6 @@ class Alice:
         bob_port: int = 9999,
         alice_port: int | None = None,
     ) -> tuple[dict, bool]:
-        """Helper: prepare + send dalam satu langkah."""
         payload = self.prepare_secure_message(plaintext)
         success = self.send_payload(payload, bob_port=bob_port, alice_port=alice_port)
         return payload, success

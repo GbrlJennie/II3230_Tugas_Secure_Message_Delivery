@@ -1,8 +1,3 @@
-"""
-bob.py
-Modul sisi penerima (Bob) untuk End-to-End Secure Message Delivery.
-"""
-
 import socket
 import threading
 from crypto_utils import (
@@ -16,8 +11,6 @@ from crypto_utils import (
 
 
 class BobVerificationResult:
-    """Hasil verifikasi pesan di sisi Bob."""
-
     def __init__(self):
         self.plaintext: str = ""
         self.aes_key_hex: str = ""
@@ -40,10 +33,6 @@ class BobVerificationResult:
 
 
 class Bob:
-    """
-    Representasi penerima (Bob) dalam skenario secure message delivery.
-    """
-
     def __init__(self, private_key, alice_public_key,
                  listen_ip: str = "0.0.0.0", port: int = 9999):
         self.private_key = private_key
@@ -65,13 +54,6 @@ class Bob:
         print(f"[Bob] {msg}")
 
     def process_payload(self, payload_json: str) -> BobVerificationResult:
-        """
-        Proses payload JSON yang diterima dari Alice:
-        1. Dekripsi AES key dengan private key Bob
-        2. Dekripsi ciphertext dengan AES key
-        3. Hitung hash plaintext dan bandingkan
-        4. Verifikasi digital signature
-        """
         result = BobVerificationResult()
         self.log.clear()
 
@@ -126,7 +108,6 @@ class Bob:
         return result
 
     def _handle_client(self, conn: socket.socket, addr):
-        """Handle satu koneksi masuk dari Alice."""
         try:
             self._log(f"Koneksi diterima dari {addr[0]}:{addr[1]}")
             # Baca 4 byte panjang, lalu baca isi
@@ -151,7 +132,6 @@ class Bob:
             conn.close()
 
     def start_listening(self, callback=None):
-        """Mulai server listener di thread terpisah."""
         if callback:
             self.on_message_received = callback
         self._running = True
@@ -176,7 +156,6 @@ class Bob:
                 break
 
     def stop_listening(self):
-        """Hentikan server listener."""
         self._running = False
         if self._server_socket:
             self._server_socket.close()
