@@ -2,6 +2,13 @@
 ## II3230 Keamanan Informasi — Latihan Praktikum
 
 ---
+## Kontributor
+| Nama | NIM |
+|---|---|
+| Naila Selvira Budiana | 18223018 |
+| Gabriela Jennifer Sandy | 18223092 |
+
+---
 
 ## Struktur Folder
 
@@ -75,7 +82,7 @@ python GUI.py
 
 ```json
 {
-  "source_ip": "127.0.0.1",
+  "source_ip": "127.0.0.2",
   "destination_ip": "127.0.0.1",
   "ciphertext": "<base64>",
   "iv": "<base64>",
@@ -109,11 +116,4 @@ Alice (127.0.0.2) ──── TCP Socket ────► Bob (127.0.0.1:9999)
 ```
 
 Untuk dua perangkat berbeda, ganti IP sesuai jaringan lokal.
-
----
-## Kontributor
-| Nama | NIM |
-|---|---|
-| Naila Selvira Budiana | 18223018 |
-| Gabriela Jennifer Sandy | 18223092 |
 
